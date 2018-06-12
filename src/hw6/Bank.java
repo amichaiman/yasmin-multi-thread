@@ -3,6 +3,7 @@ package hw6;
 import java.util.HashSet;
 import java.util.Random;
 import java.util.Set;
+import java.util.concurrent.locks.ReentrantLock;
 
 /**
  * Bank - launches the simulation and keeps feeding it with new customers
@@ -102,6 +103,9 @@ public class Bank extends Thread {
 	 * @param samplingRate
 	 *            - delay between samples taken by the observer
 	 */
+
+	ReentrantLock counterLock;
+
 	public Bank(double dayLength,
 				double tellerActiveMean, 
 				double tellerActiveVar, 
@@ -125,6 +129,7 @@ public class Bank extends Thread {
 		random = new Random();
 
 		tellers = new HashSet<>();
+		clock = new Clock(this.dayLength);
 
 		for (int i=0 ; i<tellerCount; i++){
 			int activeTime = gaussian(tellerActiveMean,tellerActiveVar);
@@ -134,8 +139,9 @@ public class Bank extends Thread {
 		}
 
 
-		sampler = new SamplerQueues((int)samplingRate,  tellers);
-		clock = new Clock(this.dayLength);
+		sampler = new SamplerQueues((int)samplingRate,  tellers,clock);
+
+		counterLock = new ReentrantLock(true);
 	}
 
 	/**
@@ -157,8 +163,9 @@ public class Bank extends Thread {
 				e.printStackTrace();
 			}
 			int serveTime = gaussian(custServeTimeMean,custServeTimeVar);
-			Customer customer = new Customer(serveTime,tellers);
+			Customer customer = new Customer(serveTime,tellers,this);
 
+			incrementCustCount();
 			customer.start();
 		}
 
@@ -168,10 +175,28 @@ public class Bank extends Thread {
 				t.notify();
 			}
 		}
-
+		sampler.printStatistics();
 	}
-	
-	
+
+	private void incrementCustCount() {
+		counterLock.lock();
+		try{
+			custCount++;
+		} finally {
+			counterLock.unlock();
+		}
+	}
+
+	public void decrementCustCount() {
+		counterLock.lock();
+		try{
+			custCount--;
+		} finally {
+			counterLock.unlock();
+		}
+	}
+
+
 	/**
 	 * gaussian - compute a random number drawn from a normal (Gaussian)
 	 * distribution

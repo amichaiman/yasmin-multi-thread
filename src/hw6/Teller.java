@@ -56,7 +56,9 @@ public class Teller extends Thread {
 
 	        //going to rest
             try {
-                this.wait();
+            	synchronized (this) {
+					this.wait();
+				}
             } catch (InterruptedException e) {
                 e.printStackTrace();
             }

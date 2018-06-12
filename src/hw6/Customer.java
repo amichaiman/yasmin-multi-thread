@@ -17,10 +17,14 @@ public class Customer extends Thread {
 	};
 	private int serviceTime;
 	private Status status;
+	private long startWaitTime;
+	private long totalWaitTime;
+	private Bank bank;
 
-	public Customer(int serveTime, Set<Teller> tellers) {
+	public Customer(int serveTime, Set<Teller> tellers, Bank bank) {
 		this.serviceTime = serveTime;
 		this.tellers = tellers;
+		this.bank = bank;
 	}
 
 	/**
@@ -37,19 +41,23 @@ public class Customer extends Thread {
 			}
 		}
 		status = Status.WAITING;
+		startWaitTime = System.nanoTime();
 		shortestTellerQueue.addCustomer(this);
 	}
 
 
 	public void serve() {
+		totalWaitTime = System.nanoTime()-startWaitTime;
 		status = Status.INSERVICE;
 		try {
-			Thread.sleep(serviceTime);
+			Thread.sleep(serviceTime*Bank.TIME_SIMULATION_FACTOR);
 		} catch (InterruptedException e) {
 			e.printStackTrace();
 		}
 		status = Status.DONE;
-
+		bank.decrementCustCount();
 	}
-
+	public long getTotalWaitTime(){
+		return totalWaitTime;
+	}
 } /* class Customer */
