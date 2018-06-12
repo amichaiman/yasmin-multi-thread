@@ -9,9 +9,9 @@ import java.util.Set;
  */
 public class SamplerQueues extends Thread {
 	private Set<Teller> tellers;
-	private double rate;
+	private int rate;
 
-	public SamplerQueues(double samplingRate, Set<Teller> tellers) {
+	public SamplerQueues(int samplingRate, Set<Teller> tellers) {
 		rate = samplingRate;
 		this.tellers = tellers;
 	}

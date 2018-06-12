@@ -13,12 +13,12 @@ public class Customer extends Thread {
 
 	public enum Status {
 		WAITING, INSERVICE, DONE;
-	};
-	private long serviceTime;
 
+	};
+	private int serviceTime;
 	private Status status;
 
-	public Customer(long serveTime, Set<Teller> tellers) {
+	public Customer(int serveTime, Set<Teller> tellers) {
 		this.serviceTime = serveTime;
 		this.tellers = tellers;
 	}
@@ -40,5 +40,16 @@ public class Customer extends Thread {
 		shortestTellerQueue.addCustomer(this);
 	}
 
+
+	public void serve() {
+		status = Status.INSERVICE;
+		try {
+			Thread.sleep(serviceTime);
+		} catch (InterruptedException e) {
+			e.printStackTrace();
+		}
+		status = Status.DONE;
+
+	}
 
 } /* class Customer */

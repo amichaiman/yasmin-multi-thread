@@ -68,7 +68,7 @@ public class Bank extends Thread {
 	/*
 	 * parameters relating to the clock and working hours
 	 */
-	private long dayLength; 
+	private int dayLength;
 	private Clock clock;
 
 	/**
@@ -102,7 +102,7 @@ public class Bank extends Thread {
 	 * @param samplingRate
 	 *            - delay between samples taken by the observer
 	 */
-	public Bank(long dayLength,
+	public Bank(double dayLength,
 				double tellerActiveMean, 
 				double tellerActiveVar, 
 				double tellerIdleMean,
@@ -110,7 +110,7 @@ public class Bank extends Thread {
 				int tellerCount, double custArrivalMean, double custArrivalVar,
 			double custServeTimeMean, double custServeTimeVar, double samplingRate) {
 
-		this.dayLength = dayLength;
+		this.dayLength = (int) dayLength*60;
 		this.tellerActiveMean = tellerActiveMean;
 		this.tellerActiveVar = tellerActiveVar;
 		this.tellerIdleMean = tellerIdleMean;
@@ -127,15 +127,15 @@ public class Bank extends Thread {
 		tellers = new HashSet<>();
 
 		for (int i=0 ; i<tellerCount; i++){
-			long activeTime = gaussian(tellerActiveMean,tellerActiveVar);
-			long idleTime = gaussian(tellerIdleMean,tellerIdleVar);
+			int activeTime = gaussian(tellerActiveMean,tellerActiveVar);
+			int idleTime = gaussian(tellerIdleMean,tellerIdleVar);
 
-			tellers.add(new Teller(activeTime,idleTime));
+			tellers.add(new Teller(activeTime,idleTime,clock));
 		}
 
 
-		sampler = new SamplerQueues(samplingRate,  tellers);
-		clock = new Clock(dayLength*TIME_SIMULATION_FACTOR);
+		sampler = new SamplerQueues((int)samplingRate,  tellers);
+		clock = new Clock(this.dayLength);
 	}
 
 	/**
@@ -143,23 +143,32 @@ public class Bank extends Thread {
 	 */
 	public void run() {
 		clock.start();
+
 		for (Teller t : tellers){
-			t.start();	//TODO : implement run()
+			t.start();
 		}
 		sampler.start();
 
 
 		while (clock.isWorking()){
 			try {
-				Thread.sleep(gaussian(custArrivalMean,custArrivalVar));
+				Thread.sleep(gaussian(custArrivalMean,custArrivalVar)*Bank.TIME_SIMULATION_FACTOR);
 			} catch (InterruptedException e) {
 				e.printStackTrace();
 			}
-			long serveTime = gaussian(custServeTimeMean,custServeTimeVar);
+			int serveTime = gaussian(custServeTimeMean,custServeTimeVar);
 			Customer customer = new Customer(serveTime,tellers);
 
 			customer.start();
 		}
+
+
+		for (Teller t : tellers){
+			synchronized (t){
+				t.notify();
+			}
+		}
+
 	}
 	
 	
@@ -173,11 +182,11 @@ public class Bank extends Thread {
 	 *            - the variance of the distribution
 	 * @return
 	 */
-	public long gaussian(double periodMean, double periodVar) {
+	public int gaussian(double periodMean, double periodVar) {
 		double period = 0;
 		while (period < 1)
 			period = periodMean + Math.sqrt(periodVar) * random.nextGaussian();
-		return ((long) (period * Bank.TIME_SIMULATION_FACTOR));
+		return ((int) (period));
 	}
 
 	/**

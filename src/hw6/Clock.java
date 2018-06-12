@@ -7,9 +7,9 @@ package hw6;
 public class Clock extends Thread {
 
 	private boolean isWorking;
-	private long numberOfMinutes;
+	private int  numberOfMinutes;
 
-	public Clock(long numberOfMinutes) {
+	public Clock(int numberOfMinutes) {
 		this.numberOfMinutes = numberOfMinutes;
 		isWorking = false;
 	}
@@ -18,7 +18,7 @@ public class Clock extends Thread {
 		isWorking = true;
 
 		try {
-			Thread.sleep(numberOfMinutes);
+			Thread.sleep(numberOfMinutes*Bank.TIME_SIMULATION_FACTOR);
 		} catch (InterruptedException e) {
 			e.printStackTrace();
 		}
